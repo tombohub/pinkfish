@@ -6,23 +6,26 @@ https://ta-lib.org/function.html
 """
 
 import math
+
 import numpy as np
 import pandas as pd
 
-import pinkfish.pfstatistics as pfstatistics
+import pinkfish777.pfstatistics as pfstatistics
 
 
 class IndicatorError(Exception):
     """
     Base indicator exception.
     """
+
     pass
 
 
 ########################################################################
 # SMA
 
-def SMA(ts, timeperiod=30, price='close'):
+
+def SMA(ts, timeperiod=30, price="close"):
     """
     This indicator computes a simple moving average.
 
@@ -53,7 +56,8 @@ def SMA(ts, timeperiod=30, price='close'):
 ########################################################################
 # EMA
 
-def EMA(ts, timeperiod=30, price='close'):
+
+def EMA(ts, timeperiod=30, price="close"):
     """
     This indicator computes an exponential moving average.
 
@@ -84,10 +88,12 @@ def EMA(ts, timeperiod=30, price='close'):
 ########################################################################
 # CROSSOVER
 
+
 class TradeCrossOverError(IndicatorError):
     """
     Invalid timeperiod specified.
     """
+
     pass
 
 
@@ -109,6 +115,7 @@ class _CrossOver:
     _r < 0, then bear market, fast_ma < slow_ma
     _r == 0, no trend established yet
     """
+
     def __init__(self):
         """
         Initialize instance variables.
@@ -136,20 +143,27 @@ class _CrossOver:
         _r : int
             Indicates regime direction and duration.
         """
-        if pd.isnull(row['__sma_slow__']):
+        if pd.isnull(row["__sma_slow__"]):
             self._r = np.nan
-        elif row['__sma_fast__'] > row['__sma_slow__']*(1+band/100):
+        elif row["__sma_fast__"] > row["__sma_slow__"] * (1 + band / 100):
             self._r = self._r + 1 if self._r > 0 else 1
-        elif row['__sma_fast__'] < row['__sma_slow__']*(1-band/100):
-            self._r = self._r -1 if self._r < 0 else -1
+        elif row["__sma_fast__"] < row["__sma_slow__"] * (1 - band / 100):
+            self._r = self._r - 1 if self._r < 0 else -1
         else:
             pass
         return self._r
 
 
-def CROSSOVER(ts, timeperiod_fast=50, timeperiod_slow=200,
-              func_fast=SMA, func_slow=SMA, band=0,
-              price='close', prevday=False):
+def CROSSOVER(
+    ts,
+    timeperiod_fast=50,
+    timeperiod_slow=200,
+    func_fast=SMA,
+    func_slow=SMA,
+    band=0,
+    price="close",
+    prevday=False,
+):
     """
     This indicator is used to represent regime direction and duration.
 
@@ -205,28 +219,30 @@ def CROSSOVER(ts, timeperiod_fast=50, timeperiod_slow=200,
     >>> ts['regime'] = pf.CROSSOVER(ts, timeperiod_fast=50,
                                     timeperiod_slow=200)
     """
-    if (timeperiod_fast < 1 or timeperiod_slow < 2
-        or timeperiod_fast >= timeperiod_slow):
+    if timeperiod_fast < 1 or timeperiod_slow < 2 or timeperiod_fast >= timeperiod_slow:
         raise TradeCrossOverError
 
-    ts['__sma_fast__'] = ts[price] if timeperiod_fast == 1 else \
-        func_fast(ts, timeperiod=timeperiod_fast, price=price)
+    ts["__sma_fast__"] = (
+        ts[price]
+        if timeperiod_fast == 1
+        else func_fast(ts, timeperiod=timeperiod_fast, price=price)
+    )
 
-    ts['__sma_slow__'] = \
-        func_slow(ts, timeperiod=timeperiod_slow, price=price)
+    ts["__sma_slow__"] = func_slow(ts, timeperiod=timeperiod_slow, price=price)
 
     func = _CrossOver().apply
     s = ts.apply(func, band=band, axis=1)
     if prevday:
         s = s.shift()
-    ts.drop(['__sma_fast__', '__sma_slow__'], axis=1, inplace=True)
+    ts.drop(["__sma_fast__", "__sma_slow__"], axis=1, inplace=True)
     return s
 
 
 ########################################################################
 # MOMENTUM
 
-def MOMENTUM(ts, lookback=1, time_frame='monthly', price='close', prevday=False):
+
+def MOMENTUM(ts, lookback=1, time_frame="monthly", price="close", prevday=False):
     """
     This indicator is used to represent momentum is security prices.
 
@@ -267,16 +283,20 @@ def MOMENTUM(ts, lookback=1, time_frame='monthly', price='close', prevday=False)
     >>> ts['mom'] = pf.MOMENTUM(ts, lookback=6, time_frame='monthly')
     """
     if lookback < 1:
-        raise ValueError('lookback must be positive')
+        raise ValueError("lookback must be positive")
 
-    if   time_frame =='daily':   factor = 1
-    elif time_frame =='weekly':  factor = pfstatistics.TRADING_DAYS_PER_WEEK
-    elif time_frame =='monthly': factor = pfstatistics.TRADING_DAYS_PER_MONTH
-    elif time_frame =='yearly':  factor = pfstatistics.TRADING_DAYS_PER_YEAR
+    if time_frame == "daily":
+        factor = 1
+    elif time_frame == "weekly":
+        factor = pfstatistics.TRADING_DAYS_PER_WEEK
+    elif time_frame == "monthly":
+        factor = pfstatistics.TRADING_DAYS_PER_MONTH
+    elif time_frame == "yearly":
+        factor = pfstatistics.TRADING_DAYS_PER_YEAR
     else:
         raise ValueError(f'invalid time_frame "{time_frame}"')
 
-    s = ts[price].pct_change(periods=lookback*factor)
+    s = ts[price].pct_change(periods=lookback * factor)
     if prevday:
         s = s.shift()
 
@@ -286,8 +306,16 @@ def MOMENTUM(ts, lookback=1, time_frame='monthly', price='close', prevday=False)
 ########################################################################
 # VOLATILITY
 
-def VOLATILITY(ts, lookback=20, time_frame='yearly', downside=False, upside=False,
-               price='close', prevday=False):
+
+def VOLATILITY(
+    ts,
+    lookback=20,
+    time_frame="yearly",
+    downside=False,
+    upside=False,
+    price="close",
+    prevday=False,
+):
     """
     This indicator is used to represent volatility in security prices.
 
@@ -337,12 +365,16 @@ def VOLATILITY(ts, lookback=20, time_frame='yearly', downside=False, upside=Fals
     >>> ts['vola'] = pf.VOLATILITY(ts, lookback=20, time_frame='yearly')
     """
     if lookback < 1:
-        raise ValueError('lookback must be positive')
+        raise ValueError("lookback must be positive")
 
-    if   time_frame == 'daily':   factor = 1
-    elif time_frame == 'weekly':  factor = pfstatistics.TRADING_DAYS_PER_WEEK
-    elif time_frame == 'monthly': factor = pfstatistics.TRADING_DAYS_PER_MONTH
-    elif time_frame == 'yearly':  factor = pfstatistics.TRADING_DAYS_PER_YEAR
+    if time_frame == "daily":
+        factor = 1
+    elif time_frame == "weekly":
+        factor = pfstatistics.TRADING_DAYS_PER_WEEK
+    elif time_frame == "monthly":
+        factor = pfstatistics.TRADING_DAYS_PER_MONTH
+    elif time_frame == "yearly":
+        factor = pfstatistics.TRADING_DAYS_PER_YEAR
     else:
         raise ValueError(f'invalid time_frame "{time_frame}"')
 
@@ -362,7 +394,8 @@ def VOLATILITY(ts, lookback=20, time_frame='yearly', downside=False, upside=Fals
 ########################################################################
 # ANNUALIZED_RETURNS
 
-def ANNUALIZED_RETURNS(ts, lookback=5, price='close', prevday=False):
+
+def ANNUALIZED_RETURNS(ts, lookback=5, price="close", prevday=False):
     """
     Calculate the rolling annualized returns.
 
@@ -399,6 +432,7 @@ def ANNUALIZED_RETURNS(ts, lookback=5, price='close', prevday=False):
     >>> annual_returns_3yr = pf.ANNUALIZED_RETURNS(ts, lookback=3)
     >>> annual_returns_5yr = pf.ANNUALIZED_RETURNS(ts, lookback=5)
     """
+
     def _cagr(s):
         """
         Calculate compound annual growth rate.
@@ -408,11 +442,12 @@ def ANNUALIZED_RETURNS(ts, lookback=5, price='close', prevday=False):
         A = s.iloc[0]
         B = s.iloc[-1]
         n = len(s)
-        if B < 0: B = 0
+        if B < 0:
+            B = 0
         return (math.pow(B / A, 1 / n) - 1) * 100
 
     if lookback <= 0:
-        raise ValueError('lookback must be positive')
+        raise ValueError("lookback must be positive")
 
     window = int(lookback * pfstatistics.TRADING_DAYS_PER_YEAR)
     s = pd.Series(ts[price]).rolling(window).apply(_cagr)
@@ -425,7 +460,8 @@ def ANNUALIZED_RETURNS(ts, lookback=5, price='close', prevday=False):
 ########################################################################
 # ANNUALIZED_STANDARD_DEVIATION
 
-def ANNUALIZED_STANDARD_DEVIATION(ts, lookback=3, price='close', prevday=False):
+
+def ANNUALIZED_STANDARD_DEVIATION(ts, lookback=3, price="close", prevday=False):
     """
     Calculate the rolling annualized standard deviation.
 
@@ -462,6 +498,7 @@ def ANNUALIZED_STANDARD_DEVIATION(ts, lookback=3, price='close', prevday=False):
     >>> std_dev_3yr = pf.ANNUALIZED_STANDARD_DEVIATION(ts, lookback=3)
     >>> std_dev_5yr = pf.ANNUALIZED_STANDARD_DEVIATION(ts, lookback=5)
     """
+
     def _std_dev(s):
         """
         Calculate the annualized standard deviation.
@@ -469,7 +506,7 @@ def ANNUALIZED_STANDARD_DEVIATION(ts, lookback=3, price='close', prevday=False):
         return np.std(s, axis=0) * math.sqrt(pfstatistics.TRADING_DAYS_PER_YEAR)
 
     if lookback <= 0:
-        raise ValueError('lookback must be positive')
+        raise ValueError("lookback must be positive")
 
     window = int(lookback * pfstatistics.TRADING_DAYS_PER_YEAR)
     pc = ts[price].pct_change()
@@ -483,8 +520,8 @@ def ANNUALIZED_STANDARD_DEVIATION(ts, lookback=3, price='close', prevday=False):
 ########################################################################
 # ANNUALIZED_SHARPE_RATIO
 
-def ANNUALIZED_SHARPE_RATIO(ts, lookback=5, price='close', prevday=False,
-                            risk_free=0):
+
+def ANNUALIZED_SHARPE_RATIO(ts, lookback=5, price="close", prevday=False, risk_free=0):
     """
     Calculate the rolling annualized sharpe ratio.
 
@@ -523,6 +560,7 @@ def ANNUALIZED_SHARPE_RATIO(ts, lookback=5, price='close', prevday=False,
     >>> sharpe_ratio_3yr = pf.ANNUALIZED_SHARPE_RATIO(ts, lookback=3)
     >>> sharpe_ratio_5yr = pf.ANNUALIZED_SHARPE_RATIO(ts, lookback=5)
     """
+
     def _sharpe_ratio(s):
         """
         Calculate the annualized sharpe ratio.
@@ -530,11 +568,11 @@ def ANNUALIZED_SHARPE_RATIO(ts, lookback=5, price='close', prevday=False,
         dev = np.std(s, axis=0)
         mean = np.mean(s, axis=0)
         period = len(s)
-        sharpe = (mean*period - risk_free) / (dev * np.sqrt(period))
+        sharpe = (mean * period - risk_free) / (dev * np.sqrt(period))
         return sharpe
 
     if lookback <= 0:
-        raise ValueError('lookback must be positive')
+        raise ValueError("lookback must be positive")
 
     window = int(lookback * pfstatistics.TRADING_DAYS_PER_YEAR)
     pc = ts[price].pct_change()

@@ -4,14 +4,15 @@ Plotting functions.
 
 import matplotlib.pyplot as plt
 from pandas.plotting import register_matplotlib_converters
+
 # Register matplotlib converters.
 register_matplotlib_converters()
 
-import pinkfish.pfstatistics as pfstatistics
-import pinkfish.trade as trade
+import pinkfish777.pfstatistics as pfstatistics
+import pinkfish777.trade as trade
 
 
-def plot_equity_curve(strategy, benchmark=None, yscale='linear', fname=None):
+def plot_equity_curve(strategy, benchmark=None, yscale="linear", fname=None):
     """
     Plot Equity Curve: Strategy and (optionally) Benchmark.
 
@@ -33,16 +34,17 @@ def plot_equity_curve(strategy, benchmark=None, yscale='linear', fname=None):
     None
     """
     fig = plt.figure()
-    axes = fig.add_subplot(111, ylabel='Portfolio value in $')
-    axes.plot(strategy['close'], label='strategy')
+    axes = fig.add_subplot(111, ylabel="Portfolio value in $")
+    axes.plot(strategy["close"], label="strategy")
     axes.set_yscale(yscale)
     if benchmark is not None:
-        axes.plot(benchmark['close'], label='benchmark')
-    plt.legend(loc='best')
+        axes.plot(benchmark["close"], label="benchmark")
+    plt.legend(loc="best")
     if fname:
-        plt.savefig(fname, bbox_inches='tight')
+        plt.savefig(fname, bbox_inches="tight")
 
-def plot_equity_curves(strategies, labels=None, yscale='linear', fname=None):
+
+def plot_equity_curves(strategies, labels=None, yscale="linear", fname=None):
     """
     Plot one or more equity curves on the same plot.
 
@@ -63,20 +65,21 @@ def plot_equity_curves(strategies, labels=None, yscale='linear', fname=None):
     -------
     None
     """
-    fig = plt.figure(figsize=(16,12))
-    axes = fig.add_subplot(111, ylabel='Portfolio value in $')
+    fig = plt.figure(figsize=(16, 12))
+    axes = fig.add_subplot(111, ylabel="Portfolio value in $")
     for i, strategy in enumerate(strategies):
         if labels is None:
             label = strategy.symbol
         else:
             label = labels[i]
-        axes.plot(strategy.dbal['close'], label=label)
+        axes.plot(strategy.dbal["close"], label=label)
         axes.set_yscale(yscale)
-    plt.legend(loc='best')
+    plt.legend(loc="best")
     if fname:
-        plt.savefig(fname, bbox_inches='tight')
+        plt.savefig(fname, bbox_inches="tight")
 
-def plot_trades(strategy, benchmark=None, yscale='linear', fname=None):
+
+def plot_trades(strategy, benchmark=None, yscale="linear", fname=None):
     """
     Plot Trades.
 
@@ -101,62 +104,64 @@ def plot_trades(strategy, benchmark=None, yscale='linear', fname=None):
     """
     if benchmark is None or strategy is benchmark:
         benchmark = strategy
-        label = 'strategy'
+        label = "strategy"
     else:
-        label = 'benchmark'
+        label = "benchmark"
 
     fig = plt.figure()
-    axes = fig.add_subplot(111, ylabel='Portfolio value in $')
-    axes.plot(benchmark.index, benchmark['close'], label=label)
+    axes = fig.add_subplot(111, ylabel="Portfolio value in $")
+    axes.plot(benchmark.index, benchmark["close"], label=label)
     axes.set_yscale(yscale)
 
     # Buy trades.
-    s = strategy['state'] == trade.TradeState.OPEN
+    s = strategy["state"] == trade.TradeState.OPEN
     s = s.reindex_like(benchmark)
     buy = benchmark[s]
-    axes.plot(buy.index, buy['close'], '^', markersize=10, color='k')
+    axes.plot(buy.index, buy["close"], "^", markersize=10, color="k")
     axes.set_yscale(yscale)
 
     # Sell trades.
-    s = strategy['state'] == trade.TradeState.CLOSE
+    s = strategy["state"] == trade.TradeState.CLOSE
     s = s.reindex_like(benchmark)
     sell = benchmark[s]
-    axes.plot(sell.index, sell['close'], 'v', markersize=10, color='r')
+    axes.plot(sell.index, sell["close"], "v", markersize=10, color="r")
     axes.set_yscale(yscale)
-    plt.legend(loc='best')
+    plt.legend(loc="best")
     if fname:
-        plt.savefig(fname, bbox_inches='tight')
+        plt.savefig(fname, bbox_inches="tight")
 
 
 default_metrics = (
-    'annual_return_rate',
-    'max_closed_out_drawdown',
-    'annualized_return_over_max_drawdown',
-    'best_month',
-    'worst_month',
-    'sharpe_ratio',
-    'sortino_ratio',
-    'monthly_std',
-    'annual_std')
+    "annual_return_rate",
+    "max_closed_out_drawdown",
+    "annualized_return_over_max_drawdown",
+    "best_month",
+    "worst_month",
+    "sharpe_ratio",
+    "sortino_ratio",
+    "monthly_std",
+    "annual_std",
+)
 """
 tuple : Default metrics for plot_bar_graph().
 
 The metrics are:
 
-    'annual_return_rate'  
-    'max_closed_out_drawdown'  
-    'annualized_return_over_max_drawdown'  
-    'best_month'  
-    'worst_month'  
-    'sharpe_ratio'  
-    'sortino_ratio'  
-    'monthly_std'  
+    'annual_return_rate'
+    'max_closed_out_drawdown'
+    'annualized_return_over_max_drawdown'
+    'best_month'
+    'worst_month'
+    'sharpe_ratio'
+    'sortino_ratio'
+    'monthly_std'
     'annual_std'
 """
 
 
-def plot_bar_graph(stats, benchmark_stats=None, metrics=default_metrics,
-                   extras=None, fname=None):
+def plot_bar_graph(
+    stats, benchmark_stats=None, metrics=default_metrics, extras=None, fname=None
+):
     """
     Plot Bar Graph: Strategy vs Benchmark (optional).
 
@@ -187,12 +192,12 @@ def plot_bar_graph(stats, benchmark_stats=None, metrics=default_metrics,
 
     df = pfstatistics.summary(stats, benchmark_stats, metrics)
     fig = plt.figure()
-    axes = fig.add_subplot(111, ylabel='Trading Metrix')
-    df.plot(kind='bar', ax=axes, color=['g', 'r'])
+    axes = fig.add_subplot(111, ylabel="Trading Metrix")
+    df.plot(kind="bar", ax=axes, color=["g", "r"])
     axes.set_xticklabels(df.index, rotation=60)
-    plt.legend(loc='best')
+    plt.legend(loc="best")
     if fname:
-        plt.savefig(fname, bbox_inches='tight')
+        plt.savefig(fname, bbox_inches="tight")
     return df
 
 
@@ -215,5 +220,5 @@ def optimizer_plot_bar_graph(df, metric):
     df = df.transpose()
     fig = plt.figure()
     axes = fig.add_subplot(111, ylabel=metric)
-    df.plot(kind='bar', ax=axes, legend=False)
+    df.plot(kind="bar", ax=axes, legend=False)
     axes.set_xticklabels(df.index, rotation=0)

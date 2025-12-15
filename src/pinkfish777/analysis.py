@@ -36,11 +36,11 @@ ac
 import matplotlib.pyplot as plt
 import pandas as pd
 
-import pinkfish.indicator as indicator
-
+import pinkfish777.indicator as indicator
 
 ########################################################################
 # PRETTIER GRAPHS
+
 
 def _calc_corr(dbal, benchmark_dbal, window):
     """
@@ -68,8 +68,13 @@ def _calc_corr(dbal, benchmark_dbal, window):
     return corr
 
 
-def prettier_graphs(dbal, benchmark_dbal, dbal_label='Strategy',
-                    benchmark_label='Benchmark', points_to_plot=None):
+def prettier_graphs(
+    dbal,
+    benchmark_dbal,
+    dbal_label="Strategy",
+    benchmark_label="Benchmark",
+    points_to_plot=None,
+):
     """
     Plot 3 subplots.
 
@@ -106,21 +111,22 @@ def prettier_graphs(dbal, benchmark_dbal, dbal_label='Strategy',
         points_to_plot = 0
 
     data = pd.DataFrame(dbal)
-    data['benchmark_dbal'] = pd.DataFrame(benchmark_dbal)
-    data.columns = ['dbal', 'benchmark_dbal']
+    data["benchmark_dbal"] = pd.DataFrame(benchmark_dbal)
+    data.columns = ["dbal", "benchmark_dbal"]
     data.head()
 
     # Rebase the two series to the same point in time;
     # starting where the plot will start.
     for col in data:
-        data[col + '_rebased'] = \
-            (data[-points_to_plot:][col].pct_change() + 1).cumprod()
+        data[col + "_rebased"] = (
+            data[-points_to_plot:][col].pct_change() + 1
+        ).cumprod()
 
     # Relative strength, strategy to benchmark.
-    data['relative_strength'] = data['dbal'] / data['benchmark_dbal']
+    data["relative_strength"] = data["dbal"] / data["benchmark_dbal"]
 
     # Calculate 100 day rolling correlation.
-    data['corr'] = _calc_corr(data['dbal'], data['benchmark_dbal'], 100)
+    data["corr"] = _calc_corr(data["dbal"], data["benchmark_dbal"], 100)
 
     # After this, we slice the data, effectively discarding all but
     # the last points_to_plot data points, using the slicing logic from
@@ -133,31 +139,37 @@ def prettier_graphs(dbal, benchmark_dbal, dbal_label='Strategy',
     # The first subplot, planning for 3 plots high, 1 plot wide,
     # this being the first.
     ax = fig.add_subplot(311)
-    ax.set_title('Comparison')
-    ax.semilogy(plot_data['dbal_rebased'], linestyle='-',
-                label=dbal_label, linewidth=3.0)
-    ax.semilogy(plot_data['benchmark_dbal_rebased'], linestyle='--',
-                label=benchmark_label, linewidth=3.0)
+    ax.set_title("Comparison")
+    ax.semilogy(
+        plot_data["dbal_rebased"], linestyle="-", label=dbal_label, linewidth=3.0
+    )
+    ax.semilogy(
+        plot_data["benchmark_dbal_rebased"],
+        linestyle="--",
+        label=benchmark_label,
+        linewidth=3.0,
+    )
     ax.legend()
     ax.grid(False)
 
     # Second sub plot.
     ax = fig.add_subplot(312)
-    label = f'Relative Strength, {dbal_label} to {benchmark_label}'
-    ax.plot(plot_data['relative_strength'], label=label, linestyle=':', linewidth=3.0)
+    label = f"Relative Strength, {dbal_label} to {benchmark_label}"
+    ax.plot(plot_data["relative_strength"], label=label, linestyle=":", linewidth=3.0)
     ax.legend()
     ax.grid(True)
 
     # Third subplot.
     ax = fig.add_subplot(313)
-    label = f'Correlation between {dbal_label} and {benchmark_label}'
-    ax.plot(plot_data['corr'], label=label, linestyle='-.', linewidth=3.0)
+    label = f"Correlation between {dbal_label} and {benchmark_label}"
+    ax.plot(plot_data["corr"], label=label, linestyle="-.", linewidth=3.0)
     ax.legend()
     ax.grid(True)
 
 
 ########################################################################
 # VOLATILITY
+
 
 def volatility_graphs(dbals, labels, points_to_plot=None):
     """
@@ -189,25 +201,25 @@ def volatility_graphs(dbals, labels, points_to_plot=None):
                                  points_to_plot=5000)
     >>> df
     """
+
     def _boxplot(volas, labels):
         """
         Plot a volatility boxplot.
         """
         fig = plt.figure(figsize=(12, 8))
-        fig.add_subplot(111, ylabel='Volatility')
+        fig.add_subplot(111, ylabel="Volatility")
         plt.ylim(0, 1)
         plt.boxplot(volas, labels=labels)
-
 
     def _volas_plot(volas, labels):
         """
         Plot volatility.
         """
         fig = plt.figure(figsize=(14, 10))
-        axes = fig.add_subplot(111, ylabel='Volatility')
+        axes = fig.add_subplot(111, ylabel="Volatility")
         for i, vola in enumerate(volas):
             axes.plot(vola, label=labels[i])
-        plt.legend(loc='best')
+        plt.legend(loc="best")
 
     if points_to_plot is None:
         points_to_plot = 0
@@ -222,15 +234,21 @@ def volatility_graphs(dbals, labels, points_to_plot=None):
     columns = labels
     data = []
     # Add metrics.
-    metrics = ['avg', 'median', 'min', 'max', 'std', 'last']
+    metrics = ["avg", "median", "min", "max", "std", "last"]
     for metric in metrics:
         index.append(metric)
-        if   metric == 'avg':    data.append(vola.mean() for vola in volas)
-        elif metric == 'median': data.append(vola.median() for vola in volas)
-        elif metric == 'min':    data.append(vola.min() for vola in volas)
-        elif metric == 'max':    data.append(vola.max() for vola in volas)
-        elif metric == 'std':    data.append(vola.std() for vola in volas)
-        elif metric == 'last':   data.append(vola.iloc[-1] for vola in volas)
+        if metric == "avg":
+            data.append(vola.mean() for vola in volas)
+        elif metric == "median":
+            data.append(vola.median() for vola in volas)
+        elif metric == "min":
+            data.append(vola.min() for vola in volas)
+        elif metric == "max":
+            data.append(vola.max() for vola in volas)
+        elif metric == "std":
+            data.append(vola.std() for vola in volas)
+        elif metric == "last":
+            data.append(vola.iloc[-1] for vola in volas)
 
     df = pd.DataFrame(data, columns=columns, index=index)
     _boxplot(volas, labels)
@@ -240,6 +258,7 @@ def volatility_graphs(dbals, labels, points_to_plot=None):
 
 ########################################################################
 # KELLY CRITERION
+
 
 def kelly_criterion(stats, benchmark_stats=None):
     """
@@ -293,17 +312,17 @@ def kelly_criterion(stats, benchmark_stats=None):
          - `conservative leverage` is the leverage factor calculated
             using half of the minimum sharpe ratio divided by 2.
     """
-    s = pd.Series(dtype='object')
+    s = pd.Series(dtype="object")
 
-    s['sharpe_ratio']           = stats['sharpe_ratio']
-    s['sharpe_ratio_max']       = stats['sharpe_ratio_max']
-    s['sharpe_ratio_min']       = stats['sharpe_ratio_min']
-    s['strategy risk']          = stats['annual_std'] / 100
+    s["sharpe_ratio"] = stats["sharpe_ratio"]
+    s["sharpe_ratio_max"] = stats["sharpe_ratio_max"]
+    s["sharpe_ratio_min"] = stats["sharpe_ratio_min"]
+    s["strategy risk"] = stats["annual_std"] / 100
     if benchmark_stats is not None:
-        s['instrument risk']    = benchmark_stats['annual_std'] / 100
-    s['optimal target risk']    = s['sharpe_ratio']
-    s['half kelly criterion']   = s['sharpe_ratio'] / 2
-    s['aggressive leverage']    = s['optimal target risk'] / s['instrument risk']
-    s['moderate leverage']      = s['half kelly criterion'] / s['instrument risk']
-    s['conservative leverage']  = (s['sharpe_ratio_min'] / 2) / s['instrument risk']
+        s["instrument risk"] = benchmark_stats["annual_std"] / 100
+    s["optimal target risk"] = s["sharpe_ratio"]
+    s["half kelly criterion"] = s["sharpe_ratio"] / 2
+    s["aggressive leverage"] = s["optimal target risk"] / s["instrument risk"]
+    s["moderate leverage"] = s["half kelly criterion"] / s["instrument risk"]
+    s["conservative leverage"] = (s["sharpe_ratio_min"] / 2) / s["instrument risk"]
     return s

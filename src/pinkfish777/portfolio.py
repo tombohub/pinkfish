@@ -9,19 +9,14 @@ import numpy as np
 import pandas as pd
 import seaborn
 
-from pinkfish.pfcalendar import calendar
-from pinkfish.fetch import (
-    fetch_timeseries,
-    select_tradeperiod,
-    finalize_timeseries
-)
-import pinkfish.pfstatistics as pfstatistics
-import pinkfish.trade as trade
-import pinkfish.utility as utility
+import pinkfish777.pfstatistics as pfstatistics
+import pinkfish777.trade as trade
+import pinkfish777.utility as utility
+from pinkfish777.fetch import fetch_timeseries, finalize_timeseries, select_tradeperiod
+from pinkfish777.pfcalendar import calendar
 
 
-def technical_indicator(symbols, output_column_suffix,
-                        input_column_suffix='close'):
+def technical_indicator(symbols, output_column_suffix, input_column_suffix="close"):
     """
     Decorator for adding a technical indicator to portfolio symbols.
 
@@ -61,23 +56,28 @@ def technical_indicator(symbols, output_column_suffix,
     ...     return pf.VOLATILITY(ts, price=input_column)
     >>> ts = _volatility(ts)
     """
+
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            assert len(args) >= 1, f'func requires at least 1 args, detected {len(args)}'
-            assert type(args[0]) == pd.DataFrame, f'args[0] not a pd.DataFrame'
+            assert len(args) >= 1, (
+                f"func requires at least 1 args, detected {len(args)}"
+            )
+            assert type(args[0]) == pd.DataFrame, f"args[0] not a pd.DataFrame"
             ts = args[0]
             indicator_column = {}
             for symbol in symbols:
-                input_column = symbol + '_' + input_column_suffix
-                output_column = symbol + '_' + output_column_suffix
-                kwargs['input_column'] = input_column
+                input_column = symbol + "_" + input_column_suffix
+                output_column = symbol + "_" + output_column_suffix
+                kwargs["input_column"] = input_column
                 indicator_column[output_column] = func(*args, **kwargs)
-            
+
             # Join all the symbol columns to the original DataFrame using pd.concat
             ts = pd.concat([ts, pd.DataFrame(indicator_column)], axis=1)
             return ts
+
         return wrapper
+
     return decorator
 
 
@@ -161,17 +161,23 @@ class Portfolio:
         Add column with field suffix for symbol, i.e. SPY_close.
         """
         for field in fields:
-            column = symbol + '_' + field
+            column = symbol + "_" + field
             ts[column] = symbol_ts[field]
         return ts
 
-    def fetch_timeseries(self, symbols, start, end,
-                         fields=['open', 'high', 'low', 'close'],
-                         dir_name='symbol-cache',
-                         use_cache=True, use_adj=True,
-                         use_continuous_calendar=False,
-                         force_stock_market_calendar=False,
-                         check_fields=['close']):
+    def fetch_timeseries(
+        self,
+        symbols,
+        start,
+        end,
+        fields=["open", "high", "low", "close"],
+        dir_name="symbol-cache",
+        use_cache=True,
+        use_adj=True,
+        use_continuous_calendar=False,
+        force_stock_market_calendar=False,
+        check_fields=["close"],
+    ):
         """
         Fetch time series data for symbols.
 
@@ -185,7 +191,7 @@ class Portfolio:
             The desired end date for the strategy.
         fields : list, optional
             The list of fields to use for each symbol (default is
-            ['open', 'high', 'low', 'close']).  List must include 
+            ['open', 'high', 'low', 'close']).  List must include
             'close' - will be added if not already in list.
         dir_name : str, optional
             The leaf data dir name (default is 'symbol-cache').
@@ -217,39 +223,51 @@ class Portfolio:
         pd.DataFrame
             The timeseries of the symbols.
         """
-        if 'close' not in fields:
-            fields.append('close')
+        if "close" not in fields:
+            fields.append("close")
 
         symbols = list(set(symbols))
         for i, symbol in enumerate(symbols):
-
             if i == 0:
                 ts = fetch_timeseries(symbol, dir_name=dir_name, use_cache=use_cache)
-                ts = select_tradeperiod(ts, start, end, use_adj=use_adj,
-                                        use_continuous_calendar=use_continuous_calendar,
-                                        force_stock_market_calendar=force_stock_market_calendar,
-                                        check_fields=check_fields)
+                ts = select_tradeperiod(
+                    ts,
+                    start,
+                    end,
+                    use_adj=use_adj,
+                    use_continuous_calendar=use_continuous_calendar,
+                    force_stock_market_calendar=force_stock_market_calendar,
+                    check_fields=check_fields,
+                )
                 self._add_symbol_columns(ts, symbol, ts, fields)
-                ts.drop(columns=['open', 'high', 'low', 'close', 'adj_close', 'volume'],
-                        inplace=True)
+                ts.drop(
+                    columns=["open", "high", "low", "close", "adj_close", "volume"],
+                    inplace=True,
+                )
             else:
                 # Add another symbol.
                 _ts = fetch_timeseries(symbol, dir_name=dir_name, use_cache=use_cache)
-                _ts = select_tradeperiod(_ts, start, end, use_adj=use_adj,
-                                         use_continuous_calendar=use_continuous_calendar,
-                                         force_stock_market_calendar=force_stock_market_calendar,
-                                         check_fields=check_fields)
+                _ts = select_tradeperiod(
+                    _ts,
+                    start,
+                    end,
+                    use_adj=use_adj,
+                    use_continuous_calendar=use_continuous_calendar,
+                    force_stock_market_calendar=force_stock_market_calendar,
+                    check_fields=check_fields,
+                )
                 self._add_symbol_columns(ts, symbol, _ts, fields)
 
         ts.dropna(inplace=True)
         self.symbols = symbols
         return ts
 
-    def add_technical_indicator(self, ts, ta_func, ta_param, output_column_suffix,
-                                input_column_suffix='close'):
+    def add_technical_indicator(
+        self, ts, ta_func, ta_param, output_column_suffix, input_column_suffix="close"
+    ):
         """
         Add a technical indicator for each symbol in the portfolio.
-        
+
         (Deprecated - use `technical_indicator` decorator instead)
 
         A new column will be added for each symbol.  The name of the
@@ -296,11 +314,11 @@ class Portfolio:
         """
         indicator_column = {}
         for symbol in self.symbols:
-            input_column = symbol + '_' + input_column_suffix
-            output_column = symbol + '_' + output_column_suffix
+            input_column = symbol + "_" + input_column_suffix
+            output_column = symbol + "_" + output_column_suffix
             ts[output_column] = ta_func(ts, ta_param, input_column)
             indicator_column[output_column] = ta_func(ts, ta_param, input_column)
-            
+
         # Join all the symbol columns to the original DataFrame using pd.concat
         ts = pd.concat([ts, pd.DataFrame(indicator_column)], axis=1)
         return ts
@@ -353,7 +371,7 @@ class Portfolio:
     ####################################################################
     # GET PRICES (get_price, get_prices)
 
-    def get_column_value(self, row, symbol, field='close'):
+    def get_column_value(self, row, symbol, field="close"):
         """
         Return column value given row, symbol, and field.
 
@@ -371,7 +389,7 @@ class Portfolio:
         price : float
             The current column value.
         """
-        symbol += '_' + field
+        symbol += "_" + field
         try:
             price = getattr(row, symbol)
         except AttributeError:
@@ -381,13 +399,13 @@ class Portfolio:
             date = row.Index.to_pydatetime()
             price = self._ts.loc[date, symbol]
         return price
-        
+
     get_price = get_column_value
     """
     method : get_price is a function reference to get_column_value, i.e. an alias.
     """
 
-    def get_column_values(self, row, fields=['open', 'high', 'low', 'close']):
+    def get_column_values(self, row, fields=["open", "high", "low", "close"]):
         """
         Return dict of column values for all symbols given row and fields.
 
@@ -411,7 +429,7 @@ class Portfolio:
                 value = self.get_column_value(row, symbol, field)
                 d[symbol][field] = value
         return d
-        
+
     get_prices = get_column_values
     """
     method : get_prices is a function reference to get_column_values, i.e. an alias.
@@ -523,8 +541,9 @@ class Portfolio:
         """
         Return the buying power.
         """
-        buying_power = (trade.TradeLog.cash * trade.TradeLog.margin
-                      + self._share_value(row, field) * (trade.TradeLog.margin -1))
+        buying_power = trade.TradeLog.cash * trade.TradeLog.margin + self._share_value(
+            row, field
+        ) * (trade.TradeLog.margin - 1)
         return buying_power
 
     def _adjust_shares(self, row, price, shares, symbol, field, direction):
@@ -548,8 +567,9 @@ class Portfolio:
         shares = self._adjust_shares(row, price, shares, symbol, field, direction)
         return shares
 
-    def adjust_percent(self, row, weight, symbol, field='close',
-                       direction=trade.Direction.LONG):
+    def adjust_percent(
+        self, row, weight, symbol, field="close", direction=trade.Direction.LONG
+    ):
         """
         Adjust symbol to a specified weight (percent) of portfolio.
 
@@ -572,14 +592,16 @@ class Portfolio:
             The number of shares bought or sold.
         """
         if not (0 <= weight <= 1):
-            raise ValueError(f'weight should be between 0 and 1 (inclusive), but {symbol}={weight}.')
+            raise ValueError(
+                f"weight should be between 0 and 1 (inclusive), but {symbol}={weight}."
+            )
 
         total_funds = self._total_funds(row, field)
         value = total_funds * weight
         shares = self._adjust_value(row, value, symbol, field, direction)
         return shares
 
-    def adjust_percents(self, row, weights, field='close', directions=None):
+    def adjust_percents(self, row, weights, field="close", directions=None):
         """
         Adjust symbols to a specified weight (percent) of portfolio.
 
@@ -608,7 +630,9 @@ class Portfolio:
         """
         for symbol, weight in weights.items():
             if not (0 <= weight <= 1):
-                raise ValueError(f'weights should be between 0 and 1 (inclusive), but {symbol}={weight}')
+                raise ValueError(
+                    f"weights should be between 0 and 1 (inclusive), but {symbol}={weight}"
+                )
 
         w = {}
 
@@ -618,7 +642,7 @@ class Portfolio:
 
         # If direction is None, this set all to pf.Direction.LONG
         if directions is None:
-            directions = {symbol:trade.Direction.LONG for symbol in self.symbols}
+            directions = {symbol: trade.Direction.LONG for symbol in self.symbols}
 
         # We want to sell current positions first to obtain cash. We need to sort
         # the change of the current weight of the position to the new weight of the
@@ -656,26 +680,26 @@ class Portfolio:
         None
         """
         date = row.Index.to_pydatetime()
-        field = 'close'
+        field = "close"
         if show_percent:
             # 2007-11-20 SPY:24.1 TLT:24.9 GLD:24.6 QQQ:24.7 cash:  1.6 total: 100.0
-            print(date.strftime('%Y-%m-%d'), end=' ')
+            print(date.strftime("%Y-%m-%d"), end=" ")
             total = 0
             for symbol, tlog in trade.TradeLog.instance.items():
                 pct = self.share_percent(row, symbol, field)
                 total += pct
-                print(f'{symbol}:{pct * 100:4,.1f}', end=' ')
+                print(f"{symbol}:{pct * 100:4,.1f}", end=" ")
             pct = trade.TradeLog.cash / self._equity(row, field)
             total += abs(pct)
-            print(f'cash: {pct * 100:4,.1f}', end=' ')
-            print(f'total: {total * 100:4,.1f}')
+            print(f"cash: {pct * 100:4,.1f}", end=" ")
+            print(f"total: {total * 100:4,.1f}")
         else:
             # 2010-02-01 SPY: 54 TLT: 59 GLD:  9 cash:    84.20 total:  9,872.30
-            print(date.strftime('%Y-%m-%d'), end=' ')
+            print(date.strftime("%Y-%m-%d"), end=" ")
             for symbol, tlog in trade.TradeLog.instance.items():
-                print(f'{symbol}:{tlog.shares:3}', end=' ')
-            print(f'cash: {trade.TradeLog.cash:8,.2f}', end=' ')
-            print(f'total: {self._equity(row, field):9,.2f}')
+                print(f"{symbol}:{tlog.shares:3}", end=" ")
+            print(f"cash: {trade.TradeLog.cash:8,.2f}", end=" ")
+            print(f"total: {self._equity(row, field):9,.2f}")
 
     ####################################################################
     # LOGS (init_trade_logs, record_daily_balance, get_logs)
@@ -720,14 +744,13 @@ class Portfolio:
         # calculate daily balance values: date, high, low, close,
         # shares, cash
         date = row.Index.to_pydatetime()
-        field = 'close'
+        field = "close"
         equity = self._equity(row, field)
         leverage = self._leverage(row, field)
         shares = 0
         for tlog in trade.TradeLog.instance.values():
             shares += tlog.shares
-        t = (date, equity, equity, equity, shares,
-             trade.TradeLog.cash, leverage)
+        t = (date, equity, equity, equity, shares, trade.TradeLog.cash, leverage)
         self._l.append(t)
 
     def get_logs(self):
@@ -747,18 +770,19 @@ class Portfolio:
         dbal : pd.DataFrame
             The daily balance log.
         """
-        tlogs = []; rlogs = []
+        tlogs = []
+        rlogs = []
         for tlog in trade.TradeLog.instance.values():
             rlogs.append(tlog.get_log_raw())
             tlogs.append(tlog.get_log(merge_trades=False))
-        
-        rlogs_non_empty = [r for r in rlogs if not r.empty]
-        rlog = pd.concat(rlogs_non_empty).sort_values(['seq_num'])
-        
-        tlogs_non_empty = [t for t in tlogs if not t.empty]
-        tlog = pd.concat(tlogs_non_empty).sort_values(['entry_date', 'exit_date'])
 
-        tlog['cumul_total'] = tlog['pl_cash'].cumsum()
+        rlogs_non_empty = [r for r in rlogs if not r.empty]
+        rlog = pd.concat(rlogs_non_empty).sort_values(["seq_num"])
+
+        tlogs_non_empty = [t for t in tlogs if not t.empty]
+        tlog = pd.concat(tlogs_non_empty).sort_values(["entry_date", "exit_date"])
+
+        tlog["cumul_total"] = tlog["pl_cash"].cumsum()
 
         dbal = trade.DailyBal()
         dbal._l = self._l
@@ -788,48 +812,51 @@ class Portfolio:
             return weights[row.name]
 
         def _currency(row):
-            return pfstatistics.currency(row['cumul_total'])
+            return pfstatistics.currency(row["cumul_total"])
 
         def _plot(df):
             df = df[:-1]
             # Make new figure and set the size.
             fig = plt.figure(figsize=(12, 8))
-            axes = fig.add_subplot(111, ylabel='Percentages')
-            axes.set_title('Performance by Symbol')
-            df.plot(kind='bar', ax=axes)
+            axes = fig.add_subplot(111, ylabel="Percentages")
+            axes.set_title("Performance by Symbol")
+            df.plot(kind="bar", ax=axes)
             axes.set_xticklabels(df.index, rotation=60)
-            plt.legend(loc='best')
+            plt.legend(loc="best")
 
         for weight in weights.values():
             if not (0 <= weight <= 1):
-                raise ValueError('weights should be between 0 and 1 (inclusive).')
+                raise ValueError("weights should be between 0 and 1 (inclusive).")
 
         # Convert dict to series.
-        s = pd.Series(dtype='object')
+        s = pd.Series(dtype="object")
         for symbol, tlog in trade.TradeLog.instance.items():
             s[symbol] = tlog.cumul_total
         # Convert series to dataframe.
-        df = pd.DataFrame(s.values, index=s.index, columns=['cumul_total'])
+        df = pd.DataFrame(s.values, index=s.index, columns=["cumul_total"])
         # Add weight column.
-        df['weight'] = df.apply(_weight, weights=weights, axis=1)
+        df["weight"] = df.apply(_weight, weights=weights, axis=1)
         # Add percent column.
-        df['pct_cumul_total'] = df['cumul_total'] / df['cumul_total'].sum()
+        df["pct_cumul_total"] = df["cumul_total"] / df["cumul_total"].sum()
         # Add relative preformance.
-        df['relative_performance'] = df['pct_cumul_total'] / df['weight']
+        df["relative_performance"] = df["pct_cumul_total"] / df["weight"]
         # Add TOTAL row.
-        data = {'cumul_total':df['cumul_total'].sum(),
-                'pct_cumul_total': 1.00, 'weight': 1.00,
-                'relative_performance': 1.00}
-        index = ['TOTAL']
+        data = {
+            "cumul_total": df["cumul_total"].sum(),
+            "pct_cumul_total": 1.00,
+            "weight": 1.00,
+            "relative_performance": 1.00,
+        }
+        index = ["TOTAL"]
         new_row = pd.DataFrame(data=data, index=index)
         df = pd.concat([df, new_row])
         # Format as currency.
-        df['cumul_total'] = df.apply(_currency, axis=1)
+        df["cumul_total"] = df.apply(_currency, axis=1)
         # Plot bar graph of performance.
         _plot(df)
         return df
 
-    def correlation_map(self, ts, method='log', days=None):
+    def correlation_map(self, ts, method="log", days=None):
         """
         Show correlation map between symbols.
 
@@ -851,30 +878,31 @@ class Portfolio:
         """
 
         # Filter coloumn names for ''_close''; remove '_close' suffix.
-        df = ts.filter(regex='_close')
-        df.columns = df.columns.str.strip('_close')
+        df = ts.filter(regex="_close")
+        df.columns = df.columns.str.strip("_close")
 
         # Default is all days.
         if days is None:
             days = 0
         df = df[-days:]
 
-        if method == 'price':
+        if method == "price":
             pass
-        elif method == 'log':
-            df = np.log(df.pct_change()+1)
-        elif method == 'returns':
+        elif method == "log":
+            df = np.log(df.pct_change() + 1)
+        elif method == "returns":
             df = df.pct_change()
 
-        df = df.corr(method='pearson')
+        df = df.corr(method="pearson")
         # Reset symbol as index (rather than 0-X).
         df.head().reset_index()
         # Take the bottom triangle since it repeats itself.
         mask = np.zeros_like(df)
         mask[np.triu_indices_from(mask)] = True
         # Generate plot.
-        seaborn.heatmap(df, cmap='RdYlGn', vmax=1.0, vmin=-1.0,
-                        mask=mask, linewidths=2.5)
+        seaborn.heatmap(
+            df, cmap="RdYlGn", vmax=1.0, vmin=-1.0, mask=mask, linewidths=2.5
+        )
         plt.yticks(rotation=0)
         plt.xticks(rotation=90)
         return df

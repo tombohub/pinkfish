@@ -2,10 +2,10 @@
 Benchmark for comparision to a strategy.
 """
 
-import pinkfish.portfolio as portfolio
-import pinkfish.pfstatistics as pfstatistics
-import pinkfish.trade as trade
-import pinkfish.utility as utility
+import pinkfish777.pfstatistics as pfstatistics
+import pinkfish777.portfolio as portfolio
+import pinkfish777.trade as trade
+import pinkfish777.utility as utility
 
 
 class Benchmark:
@@ -13,11 +13,17 @@ class Benchmark:
     Portfolio Benchmark for comparison to a strategy.
     """
 
-    def __init__(self, symbols, capital, start, end,
-                 dir_name='symbol-cache',
-                 use_adj=False,
-                 use_continuous_calendar=False,
-                 force_stock_market_calendar=False):
+    def __init__(
+        self,
+        symbols,
+        capital,
+        start,
+        end,
+        dir_name="symbol-cache",
+        use_adj=False,
+        use_continuous_calendar=False,
+        force_stock_market_calendar=False,
+    ):
         """
         Initialize instance variables.
 
@@ -124,25 +130,23 @@ class Benchmark:
         weights = {}
 
         weight = 1 / len(self.portfolio.symbols)
-        weights = {symbol:weight for symbol in self.portfolio.symbols}
+        weights = {symbol: weight for symbol in self.portfolio.symbols}
 
         # Trading algorithm
         for i, row in enumerate(self.ts.itertuples()):
-
             end_flag = utility.is_last_row(self.ts, i)
-            start_flag = (i==0)
+            start_flag = i == 0
 
             # Buy on first trading day
             # Rebalance on the first trading day of each year
             # Close all positions on last trading day
             if row.first_doty or end_flag or start_flag:
-
                 # If last row, then zero out all weights.
                 if end_flag:
                     weights = utility.set_dict_values(weights, 0)
 
                 # Adjust weights of all symbols in portfolio
-                self.portfolio.adjust_percents(row, weights, field='close')
+                self.portfolio.adjust_percents(row, weights, field="close")
 
             # Record daily balance.
             self.portfolio.record_daily_balance(row)
@@ -153,10 +157,15 @@ class Benchmark:
         """
         self.portfolio = portfolio.Portfolio()
         self.ts = self.portfolio.fetch_timeseries(
-            self.symbols, self.start, self.end,
-            fields=['close'], dir_name=self.dir_name, use_adj=self.use_adj,
+            self.symbols,
+            self.start,
+            self.end,
+            fields=["close"],
+            dir_name=self.dir_name,
+            use_adj=self.use_adj,
             use_continuous_calendar=self.use_continuous_calendar,
-            force_stock_market_calendar=self.force_stock_market_calendar)
+            force_stock_market_calendar=self.force_stock_market_calendar,
+        )
         # Add calendar columns
         self.ts = self.portfolio.calendar(self.ts)
 
@@ -178,6 +187,7 @@ class Benchmark:
         Get the stats.
         """
         self.stats = pfstatistics.stats(self.ts, self.tlog, self.dbal, self.capital)
+
 
 Strategy = Benchmark
 """

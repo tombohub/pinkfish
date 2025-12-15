@@ -3,24 +3,20 @@ Fetch time series data.
 """
 
 import datetime
-from pathlib import Path
 import sys
 import warnings
+from pathlib import Path
 
 import pandas as pd
 import yfinance as yf
 
-from pinkfish.pfstatistics import (
-    select_trading_days
-)
-from pinkfish.stock_market_calendar import (
-    stock_market_calendar
-)
-import pinkfish.utility as utility
-
+import pinkfish777.utility as utility
+from pinkfish777.pfstatistics import select_trading_days
+from pinkfish777.stock_market_calendar import stock_market_calendar
 
 ########################################################################
 # TIMESERIES (fetch, select, finalize)
+
 
 def _get_cache_dir(dir_name):
     """
@@ -39,7 +35,7 @@ def _get_cache_dir(dir_name):
     base_dir = utility.ROOT
     try:
         conf = utility.read_config()
-        base_dir = conf['base_dir']
+        base_dir = conf["base_dir"]
     except Exception as e:
         pass
     finally:
@@ -68,12 +64,12 @@ def _adj_column_names(ts):
     pd.DataFrame
         The timeseries with adjusted column names.
     """
-    ts.columns = [col.lower().replace(' ','_') for col in ts.columns]
-    ts.index.names = ['date']
+    ts.columns = [col.lower().replace(" ", "_") for col in ts.columns]
+    ts.index.names = ["date"]
     return ts
 
 
-def fetch_timeseries(symbol, dir_name='symbol-cache', use_cache=True, from_year=None):
+def fetch_timeseries(symbol, dir_name="symbol-cache", use_cache=True, from_year=None):
     """
     Read time series data.
 
@@ -87,7 +83,7 @@ def fetch_timeseries(symbol, dir_name='symbol-cache', use_cache=True, from_year=
     dir_name : str, optional
         The leaf data dir name (default is 'symbol-cache').
     use_cache: bool, optional
-        True to use data cache.  False to retrieve from the internet 
+        True to use data cache.  False to retrieve from the internet
         (default is True).
     from_year: int, optional
         The start year for timeseries retrieval (default is None,
@@ -99,40 +95,45 @@ def fetch_timeseries(symbol, dir_name='symbol-cache', use_cache=True, from_year=
         The timeseries of a symbol.
     """
     if from_year is None:
-        from_year = 1900 if not sys.platform.startswith('win') else 1971
+        from_year = 1900 if not sys.platform.startswith("win") else 1971
 
     # Make symbol names uppercase.
     symbol = symbol.upper()
 
     # pinkfish allows the use of a suffix starting with a '_',
     # like SPY_SHRT, so extract the symbol.
-    symbol = symbol.split('_')[0]
+    symbol = symbol.split("_")[0]
 
-    timeseries_cache = _get_cache_dir(dir_name) / f'{symbol}.csv'
+    timeseries_cache = _get_cache_dir(dir_name) / f"{symbol}.csv"
 
     if timeseries_cache.is_file() and use_cache:
         pass
     else:
         try:
-            ts = yf.download(symbol, start=datetime.datetime(from_year, 1, 1),
-            		         progress=False, auto_adjust=False, multi_level_index=False)
+            ts = yf.download(
+                symbol,
+                start=datetime.datetime(from_year, 1, 1),
+                progress=False,
+                auto_adjust=False,
+                multi_level_index=False,
+            )
             if ts.empty:
-                print(f'No Data for {symbol}')
+                print(f"No Data for {symbol}")
                 return None
         except Exception as e:
-            print(f'\n{e}')
+            print(f"\n{e}")
             return None
         else:
             # Reorder columns, then write to csv.
-            column_order = ['Open', 'High', 'Low', 'Close', 'Adj Close', 'Volume']
+            column_order = ["Open", "High", "Low", "Close", "Adj Close", "Volume"]
             ts = ts[column_order]
-            ts.to_csv(timeseries_cache, encoding='utf-8')
+            ts.to_csv(timeseries_cache, encoding="utf-8")
 
-    ts = pd.read_csv(timeseries_cache, index_col='Date', parse_dates=True)
+    ts = pd.read_csv(timeseries_cache, index_col="Date", parse_dates=True)
     ts = _adj_column_names(ts)
 
     # Remove rows that have duplicated index.
-    ts = ts[~ts.index.duplicated(keep='first')]
+    ts = ts[~ts.index.duplicated(keep="first")]
     return ts
 
 
@@ -150,17 +151,22 @@ def _adj_prices(ts):
     pd.DataFrame
         The timeseries with adjusted prices.
     """
-    ts['open'] = ts['open'] * ts['adj_close'] / ts['close']
-    ts['high'] = ts['high'] * ts['adj_close'] / ts['close']
-    ts['low'] = ts['low'] * ts['adj_close'] / ts['close']
-    ts['close'] = ts['close'] * ts['adj_close'] / ts['close']
+    ts["open"] = ts["open"] * ts["adj_close"] / ts["close"]
+    ts["high"] = ts["high"] * ts["adj_close"] / ts["close"]
+    ts["low"] = ts["low"] * ts["adj_close"] / ts["close"]
+    ts["close"] = ts["close"] * ts["adj_close"] / ts["close"]
     return ts
 
 
-def select_tradeperiod(ts, start, end, use_adj=False,
-                       use_continuous_calendar=False,
-                       force_stock_market_calendar=False,
-                       check_fields=['close']):
+def select_tradeperiod(
+    ts,
+    start,
+    end,
+    use_adj=False,
+    use_continuous_calendar=False,
+    force_stock_market_calendar=False,
+    check_fields=["close"],
+):
     """
     Select the trade period.
 
@@ -209,9 +215,9 @@ def select_tradeperiod(ts, start, end, use_adj=False,
     You should set neither of these to True if your timeseries is based
     on the stock market.
     """
-    columns = ['open', 'high', 'low', 'close']
+    columns = ["open", "high", "low", "close"]
     if use_adj:
-        columns.append('adj_close')
+        columns.append("adj_close")
 
     # Replace 0 value columns with NaN.
     ts[columns] = ts[ts[columns] > 0][columns]
@@ -237,7 +243,7 @@ def select_tradeperiod(ts, start, end, use_adj=False,
         start = ts.index[0]
     if end > ts.index[-1]:
         end = ts.index[-1]
-    ts = ts[start - datetime.timedelta(365):end]
+    ts = ts[start - datetime.timedelta(365) : end]
 
     return ts
 
@@ -283,6 +289,7 @@ def finalize_timeseries(ts, start, dropna=False, drop_columns=None):
 #####################################################################
 # CACHE SYMBOLS (remove, update, get_symbol_metadata)
 
+
 def _difference_in_years(start, end):
     """
     Calculate the number of years between two dates.
@@ -300,11 +307,11 @@ def _difference_in_years(start, end):
         The difference in years between start and end dates.
     """
     diff = end - start
-    diff_in_years = (diff.days + diff.seconds/86400)/365.2425
+    diff_in_years = (diff.days + diff.seconds / 86400) / 365.2425
     return diff_in_years
 
 
-def remove_cache_symbols(symbols=None, dir_name='symbol-cache'):
+def remove_cache_symbols(symbols=None, dir_name="symbol-cache"):
     """
     Remove cached timeseries for list of symbols.
 
@@ -328,17 +335,17 @@ def remove_cache_symbols(symbols=None, dir_name='symbol-cache'):
         # If symbols is not a list, cast it to a list.
         if not isinstance(symbols, list):
             symbols = [symbols]
-        filenames = [symbol.upper() + '.csv' for symbol in symbols]
+        filenames = [symbol.upper() + ".csv" for symbol in symbols]
     else:
-        filenames = [f.name for f in cache_dir.iterdir() if f.suffix == '.csv']
+        filenames = [f.name for f in cache_dir.iterdir() if f.suffix == ".csv"]
 
     # Filter out any filename prefixed with '__'.
-    filenames = [f for f in filenames if not f.startswith('__')]
+    filenames = [f for f in filenames if not f.startswith("__")]
 
-    print('removing symbols:')
+    print("removing symbols:")
     for i, f in enumerate(filenames):
         symbol = Path(f).stem
-        print(symbol + ' ', end='')
+        print(symbol + " ", end="")
         if i % 10 == 0 and i != 0:
             print()
 
@@ -346,11 +353,11 @@ def remove_cache_symbols(symbols=None, dir_name='symbol-cache'):
         if filepath.exists():
             filepath.unlink()
         else:
-            print(f'\n({f} not found)')
+            print(f"\n({f} not found)")
     print()
 
 
-def update_cache_symbols(symbols=None, dir_name='symbol-cache', from_year=None):
+def update_cache_symbols(symbols=None, dir_name="symbol-cache", from_year=None):
     """
     Update cached timeseries for list of symbols.
 
@@ -378,29 +385,37 @@ def update_cache_symbols(symbols=None, dir_name='symbol-cache', from_year=None):
         if not isinstance(symbols, list):
             symbols = [symbols]
     else:
-        filenames = [f for f in cache_dir.iterdir() if f.suffix == '.csv' and not f.name.startswith('__')]
+        filenames = [
+            f
+            for f in cache_dir.iterdir()
+            if f.suffix == ".csv" and not f.name.startswith("__")
+        ]
         symbols = [f.stem for f in filenames]
 
     # Make symbol names uppercase.
     symbols = [symbol.upper() for symbol in symbols]
 
-    print('Updating symbols:')
+    print("Updating symbols:")
     for i, symbol in enumerate(symbols):
-        print(f"{symbol} ", end='')
+        print(f"{symbol} ", end="")
         if i % 10 == 0 and i != 0:
             print()
 
         try:
-            fetch_timeseries(symbol, dir_name=dir_name, use_cache=False, from_year=from_year)
+            fetch_timeseries(
+                symbol, dir_name=dir_name, use_cache=False, from_year=from_year
+            )
         except Exception as e:
-            print(f'\n({e})')
+            print(f"\n({e})")
     print()
 
 
 from pathlib import Path
+
 import pandas as pd
 
-def get_symbol_metadata(symbols=None, dir_name='symbol-cache', from_year=None):
+
+def get_symbol_metadata(symbols=None, dir_name="symbol-cache", from_year=None):
     """
     Get symbol metadata for list of symbols.
 
@@ -429,7 +444,11 @@ def get_symbol_metadata(symbols=None, dir_name='symbol-cache', from_year=None):
         if not isinstance(symbols, list):
             symbols = [symbols]
     else:
-        filenames = [f for f in cache_dir.iterdir() if f.suffix == '.csv' and not f.name.startswith('__')]
+        filenames = [
+            f
+            for f in cache_dir.iterdir()
+            if f.suffix == ".csv" and not f.name.startswith("__")
+        ]
         symbols = [f.stem for f in filenames]
 
     # Make symbol names uppercase.
@@ -438,23 +457,26 @@ def get_symbol_metadata(symbols=None, dir_name='symbol-cache', from_year=None):
     metadata = []
     for i, symbol in enumerate(symbols):
         try:
-            ts = fetch_timeseries(symbol, dir_name=dir_name, use_cache=True, from_year=from_year)
+            ts = fetch_timeseries(
+                symbol, dir_name=dir_name, use_cache=True, from_year=from_year
+            )
             start = ts.index[0].to_pydatetime()
             end = ts.index[-1].to_pydatetime()
             num_years = _difference_in_years(start, end)
-            start_str = start.strftime('%Y-%m-%d')
-            end_str = end.strftime('%Y-%m-%d')
+            start_str = start.strftime("%Y-%m-%d")
+            end_str = end.strftime("%Y-%m-%d")
             metadata.append((symbol, start_str, end_str, num_years))
         except Exception as e:
             print(f"\n({e})")
 
-    columns = ['symbol', 'start_date', 'end_date', 'num_years']
+    columns = ["symbol", "start_date", "end_date", "num_years"]
     df = pd.DataFrame(metadata, columns=columns)
     return df
 
 
 #####################################################################
 # REAL TIME QUOTE
+
 
 def get_quote(symbols):
     """
@@ -475,9 +497,8 @@ def get_quote(symbols):
     for symbol in symbols:
         ticker = yf.Ticker(symbol)
         try:
-            d[symbol] = float(ticker.fast_info['last_price'])
+            d[symbol] = float(ticker.fast_info["last_price"])
         except KeyError:
-            print(f'Could not fetch quote for {symbol}')
+            print(f"Could not fetch quote for {symbol}")
             d[symbol] = None
     return d
-
