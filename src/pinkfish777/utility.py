@@ -2,36 +2,22 @@
 Utility functions.
 """
 
-from configparser import ConfigParser
-from functools import wraps
 import importlib.util
 import inspect
+from configparser import ConfigParser
+from functools import wraps
 from pathlib import Path
 
 import pandas as pd
+from from_root import from_root
 
-
-def _get_project_top_level():
-    """
-    Returns the outermost pinkfish path.
-    """
-    current_path = Path(__file__).resolve()
-    pinkfish_path = None
-    for parent in current_path.parents:
-        if parent.name == "pinkfish":
-            pinkfish_path = parent
-    if pinkfish_path:
-        return pinkfish_path
-    raise RuntimeError("Top-level pinkfish directory not found")
-
-
-ROOT = _get_project_top_level()
+ROOT = from_root()
 """
 str: pinkfish project root dir.
 """
 
 
-def import_strategy(strategy_name, top_level_dir='examples', module_name='strategy'):
+def import_strategy(strategy_name, top_level_dir="examples", module_name="strategy"):
     """
     Import a strategy from a python `.py` file.
 
@@ -55,9 +41,12 @@ def import_strategy(strategy_name, top_level_dir='examples', module_name='strate
     >>> strategy = import_strategy(strategy_name='190.momentum-dmsr-portfolio')
     """
 
-    strategy_location = (Path(ROOT) / Path(top_level_dir)
-                                    / Path(strategy_name)
-                                    / Path(module_name + '.py'))
+    strategy_location = (
+        Path(ROOT)
+        / Path(top_level_dir)
+        / Path(strategy_name)
+        / Path(module_name + ".py")
+    )
     print(strategy_location)
     spec = importlib.util.spec_from_file_location(module_name, strategy_location)
     strategy = importlib.util.module_from_spec(spec)
@@ -69,9 +58,9 @@ def print_full(x):
     """
     Print every row of list-like object.
     """
-    pd.set_option('display.max_rows', len(x))
+    pd.set_option("display.max_rows", len(x))
     print(x)
-    pd.reset_option('display.max_rows')
+    pd.reset_option("display.max_rows")
 
 
 def read_config():
@@ -80,8 +69,8 @@ def read_config():
     """
     conf = {}
     parser = ConfigParser()
-    parser.read(Path('~/.pinkfish').expanduser())
-    conf['base_dir'] = parser.get('global', 'base_dir')
+    parser.read(Path("~/.pinkfish").expanduser())
+    conf["base_dir"] = parser.get("global", "base_dir")
     return conf
 
 
@@ -97,7 +86,7 @@ def get_previous_row(ts, bars=1):
     Returns the row from 'bars' bars ago (default: previous row).
     """
     if bars < 1 or bars >= len(ts):
-        return None  
+        return None
     return ts.iloc[-bars]
 
 
@@ -165,18 +154,21 @@ def no_empty_container(container_name, default_ret_value):
     """
 
     def decorator(func):
-    
         @wraps(func)
         def wrapper(*args, **kwargs):
             try:
                 container_obj = kwargs[container_name]
             except KeyError:
-                container_arg_index = inspect.getfullargspec(func).args.index(container_name)
+                container_arg_index = inspect.getfullargspec(func).args.index(
+                    container_name
+                )
                 container_obj = args[container_arg_index]
 
             if len(container_obj) == 0:
                 return default_ret_value
 
             return func(*args, **kwargs)
+
         return wrapper
+
     return decorator
