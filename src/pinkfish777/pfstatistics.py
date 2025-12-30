@@ -451,6 +451,8 @@ def _difference_in_years(start, end):
 def _cagr(B, A, n):
     if B < 0:
         B = 0
+    if n == 0 or A == 0:
+        return float("nan")
     return (math.pow(B / A, 1 / n) - 1) * 100
 
 
