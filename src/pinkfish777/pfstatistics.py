@@ -510,6 +510,8 @@ def _total_num_trades(tlog):
 def _trades_per_year(tlog, start, end):
     diff = relativedelta(end, start)
     years = diff.years + diff.months / 12 + diff.days / 365
+    if years == 0:
+        return float("nan")
     return _total_num_trades(tlog) / years
 
 
