@@ -30,7 +30,7 @@ The stats() function returns the following metrics in a pd.Series.
     profit factor of 1.
 
  - `return_on_initial_capital` : float
-    The ratio of gross profit divided by the initial capital and
+    The ratio of total net profit divided by the initial capital and
     multiplied by 100.
 
  - `annual_return_rate` : float
@@ -78,7 +78,7 @@ The stats() function returns the following metrics in a pd.Series.
 
  - `pct_profitable_trades` : float
     The number of winning trades divided by the total number of closed
-    trades and multiplied by 100.
+    trades.
 
  - `avg_profit_per_trade` : float
     The total net profit divided by the total number of closed trades
